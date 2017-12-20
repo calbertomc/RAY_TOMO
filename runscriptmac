@@ -1,0 +1,238 @@
+#!/bin/csh -f
+
+#csh script which uses the Taup Toolkit to calculate raypaths
+#Set parameters in the script genraypath before running it!!!!
+
+alias MATH 'set \!:1 = `echo "\!:3-$" | bc -l`'
+
+set CC = gcc
+
+
+###########################################################################################################################################
+## The routine genindex1D.c it is necessary to be used inside the script genraypath (either cshell or matlab)
+###########################################################################################################################################
+#$CC genindex1D.c -o genindex1D -lm
+#echo "The compilation of genindex1D.c has been completed"
+
+
+###########################################################################################################################################
+##Uncomment here if you want to use the cshell script to generate the raypaths. I developed a matlab routine that is faster than it.
+#############################################################################################################################################
+##set infile = iscehd3.0to10mineven5final.txt 
+##awk '{print $10,$8,$9,$5,$3,$4}' $infile > eventinfo.txt
+##awk '{print $10,$8,$9}' $infile > evt.txt #--> Necessary for frechetsparse2.c
+##chmod +x genraypath
+##./genraypath ###----> 
+##
+
+
+#####################################################################################################################################################
+##After running the genraypath.m routine, perhaps some events can be out of the study volume. Such events are recorded in the
+##file raypathoutmodel.txt. Thus, it is necessary to remove them from the original file iscehd3.0to10mineven5final.txt.
+##Also, it is necessary to recount the events according to the minimum amount of events required by being registered in each station of your study.
+## Ideally, this number must be larger than 4. It is represented by the mineven variable.   
+#####################################################################################################################################################
+set mineven = 5
+#if (-e raypathoutmodel.txt) then
+#	echo "It is necessary to rerun the script genraypath" 
+#	cp iscehd3.0to10mineven5final.txt trash1.txt
+#	set infile1 = raypathoutmodel.txt
+#	set it = 0
+#	foreach line ( "`cat ${infile1}`" )
+#		set argv = ( $line )
+#		set linenumber = $1
+#		echo "Removing line $1"
+#		if ( $it > 0 ) then
+#			MATH adj = ( $linenumber - $it )
+#			sed ${adj}d trash1.txt > trash2.txt
+#			cat trash2.txt > trash1.txt
+#		 
+#		else
+#			sed ${linenumber}d trash1.txt > trash2.txt
+#			cat trash2.txt > trash1.txt
+#		endif
+#		@ it++
+#	end
+#	mv trash1.txt iscehd3.0to10mineven5finaler.txt #---> er = events removed   
+#	rm trash*.txt
+
+#	cat iscehd3.0to10mineven5finaler.txt > infile
+#	awk '{print $1}' iscehd3.0to10mineven5finaler.txt > idfile
+#	set nlines = "`cat infile | wc -l`" #Count the number of lines in the input file
+#	set idevent1 = `sed -n 1p idfile`
+#	@ count = 2
+#	@ count2 = 1 
+#	while ( $count <= $nlines )	
+#		set idevent2 = `sed -n ${count}p idfile`
+#		if ( $idevent1 == $idevent2 ) then
+#			@ count2++ 
+#		else
+#			if ( $count2 >= $mineven ) then
+#				MATH fline = ( $count - $count2 )
+#				@ it = 1
+#				while ( $it <= $count2 )
+#					sed -n ${fline}p infile >> iscehd3.0to10mineven${mineven}newfinal.txt 
+#					@ it++
+#					@ fline++
+#				end		
+#			endif
+#			set idevent1 = $idevent2 
+#		@ count2 = 1
+#		endif
+#		@ count++
+#	end  
+#	rm infile
+#	rm idfile
+#	set dirray = raypath
+#	set dirindex = index
+#	mv $dirray old$dirray
+#	mv $dirindex old$dirindex
+#	mv raypathoutmodel.txt oldraypathoutmodel.txt
+#	#./genraypath ###----> Rerunning genraypath #Comment it if you wanna run the matlab version. 
+
+#else
+#	cp iscehd3.0to10mineven5final.txt iscehd3.0to10mineven${mineven}newfinal.txt
+#	echo "It is not necessary to rerun the script genraypath"
+#	echo " " 
+#endif
+################################################################
+# Applying crustal corrections!
+################################################################
+#set dircc = crustalcorr
+#cp iscehd3.0to10mineven${mineven}newfinal.txt $PWD/$dircc
+#cd $PWD/$dircc
+#./scriptcc #--> script for crustal corrections. Don't forget to set up this script before running it! 
+#cd ..
+#cp $PWD/$dircc/residualtimecor.txt $PWD/
+################################################################
+#
+################################################################
+set infile = iscehd3.0to10mineven${mineven}newfinal.txt 
+awk '{print $10,$8,$9}' $infile > evt.txt #--> Necessary for frechetsparse2.c
+
+set nnr = 58 #number of points in the radial direction 
+set nnt = 91 #number of points in the latidudinal direction
+set nnp = 141 #number of points in the longitudinal direction
+set nobs = "`cat $infile | wc -l`" #Count the number of lines in the input file which is related to the number of observations
+awk '{print $10,$8,$9,$5,$3,$4}' $infile > eventinfo.txt
+
+set dirindex = index
+set dirraypath = raypath
+
+
+##############################################################################
+###if you want only invert for velocity use frechetvel1D (decision = 1)
+###input files:
+###icraypath*.txt: index of the Frechet matrix calculated by using genindex1D 
+###############################################################################
+########################################################################################################################
+###input file eventinfo.txt
+##./frechethypo #--> Cshell script to calculate the Frechet matrix due to variations in the hypocentral coordinates
+########################################################################################################################
+#echo $nnr $nnt $nnp $nobs > ipfrechetvel1D.txt
+#$CC -O3 frechetsparse2.c -o frechetsparse2 -lm
+#echo " "
+#echo "The compilation of frechetsparse.c has been completed"
+#cp $PWD/frechetsparse2 $PWD/$dirindex/
+#cp $PWD/ipfrechetvel1D.txt $PWD/$dirindex/
+#cp $PWD/evt.txt $PWD/$dirindex/
+#cp $PWD/Frechethypo.txt $PWD/$dirindex/
+
+#cd $PWD/$dirindex/ 
+#./frechetsparse2
+#echo " "
+#echo "The routine frechetsparse has concluded the calculation"
+#cd ..
+#cp $PWD/$dirindex/mhypo.txt $PWD/
+#mv $PWD/$dirindex/Frechetvelsparse.st $PWD/
+#######################################################################################################################
+
+MATH nbr = ( $nnr - 1 ) #--> number of blocks in the radial direction
+MATH nbt = ( $nnt - 1 ) #--> number of blocks in the latidudinal direction
+MATH nbp = ( $nnp - 1 ) #--> number of blocks in the longitudinal direction
+
+###############################################################################
+###input file: ipmkgrid3D.txt 
+###input file: grid1d.txt
+###############################################################################
+#echo $nbr $nbt $nbp > ipmkgrid3D.txt
+#$CC makegrid3d.c -o makegrid3d -lm
+#./makegrid3d
+
+#############################################################################################
+###Use this routine to generate theoretical traveltimes from the Frechet matrix
+###inout file: ipgenttFrechet.txt 
+#############################################################################################
+set mevt = "`cat mhypo.txt`"  #--> mhypo (this file comes from frechetsparse2.c)
+MATH n = ($nbr*$nbt*$nbp) + $mevt
+set yhypo = 1 #--> set yhypo = 1 if you generate the Frechet matrix for simultaneos inverion
+echo $nobs $n $yhypo $mevt > ipgenttFrechet.txt
+#$CC -O3 genttFrechet.c -o genttFrechet
+#./genttFrechet 
+
+#$CC -O3 mkobstime.c -o mkobstime 
+#./mkobstime ttime3D.txt residualtimecor.txt
+
+######################################################################################################################################
+##Here I starte the calculation of the matrix F=(A'A+miu1*L'L+miu2*I) to use the LSQR algorithm in order to estimate a velocity model
+######################################################################################################################################
+
+##################################
+##Installing the package csparse
+##################################
+sudo cp csparse.h /usr/include/
+$CC -c -g csparse.c
+echo " "
+echo "The compilation of csparse.c has been completed"
+sudo mv csparse.o /usr/lib/csparse.o
+echo " "
+echo "Library installed as usr/lib/csparse.o"
+
+
+#$CC -c -g -I/usr/include transpm.c
+#echo " "
+#echo "The compilation of transpm.c has been completed"
+#$CC transpm.o /usr/lib/csparse.o -lm
+
+#rm transpm.o
+#chmod ugo+x a.out
+#mv a.out transpm
+#./transpm < Frechetvelsparse.st > Frechetvelsparset.st
+#echo " "
+#echo "The routine transpm has concluded the calculation"
+
+
+$CC -c -g -I/usr/include mmsparse.c
+echo " "
+echo "The compilation of mmsparse.c has been completed"
+$CC mmsparse.o /usr/lib/csparse.o -lm
+
+rm mmsparse.o
+chmod ugo+x a.out
+mv a.out mmsparse
+./mmsparse Frechetvelsparse.st Frechetvelsparset.st > GTGsparse.txt
+echo " "
+echo "The routine mmsparse has concluded the calculation"
+
+#$CC matrixL.c -o matrixL  
+#echo $nbr $nbt $nbp $mevt > ipmatrixL.txt
+#./matrixL
+
+#./mmsparse < matrixL.txt > LTLsparse.txt
+
+#$CC -c -g -I/usr/include smsparse.c
+#echo " "
+#echo "The compilation of smsparse.c has been completed"
+#$CC smsparse.o /usr/lib/csparse.o -lm
+#rm smsparse.o
+#chmod ugo+x a.out
+#mv a.out smsparse
+#set miu1 = 1.0
+#set miu2 = 1.0
+#./smsparse GTGsparse.txt LTLsparse.txt $miu1 $miu2 > matrixF.txt
+#echo " "
+#echo "The routine smsparse has concluded the calculation"
+
+#./gendhypo #C-shel script #Simultaneous inversion (vel + hypo)
+
+

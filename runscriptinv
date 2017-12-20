@@ -1,0 +1,56 @@
+#!/bin/csh -f
+
+alias MATH 'set \!:1 = `echo "\!:3-$" | bc -l`'
+
+set CC = icc
+
+set nobs = "`cat $infile | wc -l`" #Count the number of lines in the input file which is related to the number of observations
+set nnr = 58 #number of points in the radial direction 
+set nnt = 91 #number of points in the latidudinal direction
+set nnp = 141 #number of points in the longitudinal direction
+
+MATH nbr = ( $nnr - 1 ) #--> number of blocks in the radial direction
+MATH nbt = ( $nnt - 1 ) #--> number of blocks in the latidudinal direction
+MATH nbp = ( $nnp - 1 ) #--> number of blocks in the longitudinal direction
+set mevt = "`cat mhypo.txt`"  #--> mhypo (this file comes from frechetsparse2.c)
+##############################################################################################################
+# Inversion starts here!
+#input files:
+#matrixF.txt --> Created by using the mmsparse routine 
+#Frechetvelsparse.st --> Created by using either the frechetsparse or frechetvel1D routines  
+#obstimec.txt --> Observed data after corrected for crustal effects, elevation and ellipcity
+#grid3D.txt --> Created by using either the mkgrid3D or mkgrid3Dvsd routines.
+#dhypo.txt --> Created by using the gendhypo script
+#iplsqrtomo.txt:
+##############################################################################################################
+
+set atol = 0
+set btol = 0 
+set conlim = 0 
+set itnlim = 100
+set m = $nobs
+set decision = 1 #Do you wanna use restrictions in hypo coordinates?
+set damp = 0
+if ($decision == 1) then
+	set mevt = "`cat mhypo.txt`"
+	MATH n = ($nbr*$nbt*$nbp)+$mevt
+	set yhypo = 1 
+	set mddepth = 0.0016
+	set mdlat =  0.0349
+	set mdlon = 0.0349
+else
+        set mevt = "`cat mhypo.txt`"
+	MATH n = ($nbr*$nbt*$nbp)+$mevt
+	set yhypo = 1 
+	set mddepth = 0.0
+	set mdlat =  0.0
+	set mdlon = 0.0
+endif
+echo $atol $btol $conlim $itnlim $damp $m $n $mevt $yhypo $mddepth $mdlat $mdlon > iplsqrtomo.txt
+
+$CC -O3 lsqrtomo4.c -o lsqrtomo4 -lm #--> Inversion code
+echo " "
+echo "The compilation of lsqrtomo4.c has been completed"
+./lsqrtomo4
+echo " "
+echo "The routine lsqrtomo4 has concluded the calculation"
