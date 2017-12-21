@@ -4,7 +4,7 @@
 //  The LSQR is a method to solve sparse linear equations and sparse least-square problems. You can obtain the matlab version of
 //  this routine at http://www.stanford.edu/group/SOL/software/lsqr/.
 //  I'm using it to solve the large sparse matrix due to the seismic tomography method.
-//  This routine was adapted for C language by Carlos Alberto Chaves on 05/28/2014. This version is an improved one because I only use the elements of
+//  This routine was adapted to C language by Carlos Alberto Chaves on 05/28/2014. This version is an improved one because I only use the elements of
 //  the sparse matrix which are different of zero. See all documentation to understanding the procedure.
 //  University of Sao Paulo - University of Michigan
 //  carlos.chaves@iag.usp.br; cchaves@umich.edu; calbertochaves@gmail.com (main)
@@ -220,7 +220,7 @@ int main(){
     delta,
     gamma,
     rhobar,
-	rhobar1,
+    rhobar1,
     phibar,
     gambar,
     Anorm,
@@ -230,9 +230,9 @@ int main(){
     xnorm=0.0,
     xxnorm=0.0,
     bnorm,
-	rnorm,
-	r1norm,
-	r2norm,
+    rnorm,
+    r1norm,
+    r2norm,
     rhs,
     zbar,
     Acond=0.0,
