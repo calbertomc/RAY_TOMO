@@ -8,9 +8,7 @@
 //*********************************************************************************************************************************************
 //Sorry, but I usually don't comment my codes. I don't have much patience neither time to do it!
 //I usually don't share my codes, but if I did it, please don't share it with anyone else without my permission.
-//I don't share it because I don't think so I'm a good programmer. Thus, I believe that other people can do a better job than me,
-//even though all the concepts behind of this routine are right! Obviously, it is very difficult to test the routine in all possible
-//situations, so if you find some bug, please email me and let me know the problem.
+
 
 #include <stdio.h>
 #include <stdlib.h>
